@@ -1,34 +1,19 @@
-import spacy
-import json
+import google.generativeai as genai
+import os
 
-# Load small English model
-nlp = spacy.load("en_core_web_sm")
-
-# Simple predefined skill categories
-TECH_SKILLS = [
-    "python", "java", "sql", "aws", "cloud", "excel",
-    "data analysis", "machine learning", "html", "css"
-]
-
-BEHAVIORAL_SKILLS = [
-    "teamwork", "collaboration", "communication",
-    "leadership", "problem solving", "adaptability"
-]
-
-def extract_skills(query):
-    doc = nlp(query.lower())
-
-    technical = []
-    behavioral = []
-
-    for token in doc:
-        if token.text in TECH_SKILLS:
-            technical.append(token.text)
-
-        if token.text in BEHAVIORAL_SKILLS:
-            behavioral.append(token.text)
-
-    return json.dumps({
-        "technical_skills": list(set(technical)),
-        "behavioral_skills": list(set(behavioral))
-    })
+def extract_skills(query_text):
+    """skill extraction using Gemini AI directly, no Spacy needed."""
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        return query_text
+        
+    genai.configure(api_key=api_key)
+    model = genai.GenerativeModel('gemini-1.5-flash')
+    
+    prompt = f"Extract only the key technical skills and job roles from this text as a comma-separated list: {query_text}"
+    
+    try:
+        response = model.generate_content(prompt)
+        return response.text.strip()
+    except:
+        return query_text
